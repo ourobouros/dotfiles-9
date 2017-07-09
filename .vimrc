@@ -454,6 +454,8 @@ call matchadd('ColorColumn', '\%81v', 100)
 nmap <leader>t :TagbarToggle<CR>
 nmap <leader>n :NERDTreeTabsToggle<CR>
 
+" Integrate with clipper
+nnoremap <leader>y :call system('nc -U ~/.run/clipper.sock', @0)<CR>
 
 set shiftwidth=2
 set softtabstop=2
