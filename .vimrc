@@ -102,12 +102,11 @@ Plug 'junegunn/fzf'
 Plug 'junegunn/fzf.vim'
 " Git goodies
 Plug 'tpope/vim-fugitive'
+Plug 'junegunn/gv.vim'
 " The NerdTree
 Plug 'scrooloose/nerdtree' | Plug 'jistr/vim-nerdtree-tabs'
 " Nice colours for our Vim
-Plug 'altercation/vim-colors-solarized'
-" Ag, the SilverSearcher through his friend Ack
-Plug 'mileszs/ack.vim'
+Plug 'iCyMind/NeoSolarized'
 " Man browser for Vim
 Plug 'bruno-/vim-man'
 " Without you, I'm nothing
@@ -148,11 +147,17 @@ Plug 'gregsexton/gitv'
 " Ability to :SudoWrite? Priceless!
 Plug 'tpope/vim-eunuch'
 " Some syntax checking maybe?
-Plug 'vim-syntastic/syntastic'
+"Plug 'vim-syntastic/syntastic'
 " Close all buffers but current
 Plug 'muziqiushan/bufonly'
-" Enhanced Commentify
-Plug 'EnhCommentify.vim'
+" Motions and objects learned from
+" https://blog.petrzemek.net/2016/04/06/things-about-vim-i-wish-i-knew-earlier/
+Plug 'tomtom/tcomment_vim'
+Plug 'christoomey/vim-sort-motion'
+Plug 'vim-scripts/ReplaceWithRegister'
+Plug 'wellle/targets.vim'
+Plug 'michaeljsmith/vim-indent-object'
+Plug 'tpope/vim-surround'
 " Magit
 Plug 'jreybert/vimagit'
 " And gitgutter
@@ -161,19 +166,23 @@ Plug 'airblade/vim-gitgutter'
 Plug 'vim-ruby/vim-ruby'
 Plug 'tpope/vim-rails'
 Plug 'tpope/vim-bundler'
-" Run relevant RSpec cases
-Plug 'thoughtbot/vim-rspec'
 " Automatically detect indentation
 Plug 'tpope/vim-sleuth'
 
-" Task dispatcher
-Plug 'tpope/vim-dispatch'
+" Send commands to a tmux pane
+Plug 'jgdavey/tslime.vim'
 
+" When you need some focus
 Plug 'junegunn/goyo.vim'
 Plug 'junegunn/limelight.vim'
+" Which Tags are the best?
+Plug 'lyuts/vim-rtags'
 
 " Ansible support
 Plug 'chase/vim-ansible-yaml'
+
+" Nginx highliting
+Plug 'fatih/vim-nginx'
 
 " Auto-close scopes
 Plug 'Raimondi/delimitMate'
@@ -184,6 +193,33 @@ Plug 'jelera/vim-javascript-syntax'
 Plug 'pangloss/vim-javascript'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'marijnh/tern_for_vim', {'do': function('InstallTern')}
+Plug 'janko-m/vim-test'
+
+Plug 'lambdatoast/elm.vim'
+
+Plug 'mhinz/vim-grepper'
+
+Plug 'tpope/vim-markdown'
+
+Plug 'fmoralesc/nlanguagetool.nvim'
+
+Plug 'ron89/thesaurus_query.vim'
+
+Plug 'rhysd/nyaovim-markdown-preview'
+
+Plug 'janko-m/vim-test'
+
+Plug 'lambdatoast/elm.vim'
+
+Plug 'mhinz/vim-grepper'
+
+Plug 'tpope/vim-markdown'
+
+Plug 'fmoralesc/nlanguagetool.nvim'
+
+Plug 'ron89/thesaurus_query.vim'
+
+Plug 'rhysd/nyaovim-markdown-preview'
 
 " " CoffeeScript support in Vim
 " Bundle 'kchmck/vim-coffee-script'
@@ -213,12 +249,12 @@ if has('nvim')
   Plug 'neomake/neomake'
   " Popup terminal
   Plug 'kassio/neoterm'
-  " Use Neovim Terminal with Dispatch
-  Plug 'radenling/vim-dispatch-neovim'
+  if has('gui')
+    Plug 'equalsraf/neovim-gui-shim'
+  endif
 endif
 
 call plug#end()
-" FIXME: endless loop?
 catch
   " source ~/.vimrc
 endtry
@@ -227,14 +263,50 @@ endtry
 """ Now configure those plugins
 """
 
+""
+"" AgGrep (via:
+"" https://gist.github.com/manasthakur/5afd3166a14bbadc1dc0f42d070bd746
+"" )
+""
+
+let g:grepper = {}
+nnoremap <leader>G :Grepper<cr>
+let g:grepper = { 'next_tool': '<leader>g' }
+nmap gs <plug>(GrepperOperator)
+xmap gs <plug>(GrepperOperator)
+nnoremap <leader>* :Grepper -tool ag -cword -noprompt<cr>
+
+
 if executable('ag')
-  let g:ackprg = 'ag --vimgrep --smart-case'
+  set grepprg=ag\ --nogroup\ --nocolor\ --vimgrep
+  set grepformat^=%f:%l:%c:%m   " file:line:column:message
+  let g:grepper.ag = { 'grepprg': 'ag --vimgrep --smart-case' }
+  cnoreabbrev ag GrepperAg
+  cnoreabbrev aG GrepperAg
+"  cnoreabbrev Ag GrepperAg
 endif
-cnoreabbrev ag Ack
-cnoreabbrev aG Ack
-cnoreabbrev Ag Ack
-cnoreabbrev AG Ack
-cnoreabbrev Ack Ack!
+
+function! MySearch()
+  let grep_term = input("Enter search term: ")
+  if !empty(grep_term)
+    execute 'silent grep' grep_term | copen
+  else
+    echo "Empty search term"
+  endif
+  redraw!
+endfunction
+
+command! Search call MySearch()
+nnoremap <leader>f :Search<CR>
+
+nnoremap <leader>* :silent grep <cword> \| copen<CR><C-l>
+
+""
+"" }}} AgGrep
+""
+
+"cnoreabbrev AG Ack
+"cnoreabbrev Ack Ack!
 nnoremap <Leader>a :Ack!<Space>
 
 "map <Leader>n <plug>NERDTreeTabsToggle<CR>
@@ -344,6 +416,7 @@ function! s:goyo_leave()
     silent !tmux set status on
     silent !tmux list-panes -F '\#F'|grep -q Z && tmux resize-pane -Z
   endif
+
   Limelight!
   set scrolloff=5
 endfunction
@@ -358,10 +431,22 @@ endif
 
 autocmd BufRead,BufNewFile *.{markdown,md,mkd} call SetMarkdownOptions()
 function! SetMarkdownOptions()
+  setlocal filetype=markdown
   setlocal spell
+  highlight clear SpellBad
+  highlight SpellBad term=standout ctermfg=1 term=underline cterm=underline
   setlocal fo+=t
   setlocal fo-=l
   setlocal textwidth=80
+
+  nnoremap <Leader>cs :ThesaurusQueryReplaceCurrentWord<CR>
+  vnoremap <Leader>cs y:ThesaurusQueryReplace <C-r>"<CR>"
+
+  if winnr('$') == 1
+    Goyo 80
+  elseif exists('#goyo')
+    Goyo!
+  endif
 endfunction
 
 autocmd FileType ruby call SetRubyOptions()
@@ -372,10 +457,6 @@ function! SetRubyOptions()
   setlocal autoindent
 endfunction
 
-
-" Run rspec in tslime.vim
-"let g:rspec_command = 'call Send_to_Tmux("[ -n \"$ZSH_VERSION\" ] && unsetopt correct && unsetopt correct_all\n") | call Send_to_Tmux("bundle exec rspec {spec}\n")'
-let g:rspec_command = 'Dispatch bundle exec rspec {spec}'
 autocmd FileType gitcommit call SetGitComitOptions()
 function! SetGitCommitOptions()
   setlocal spell
@@ -389,10 +470,12 @@ let g:tslime_always_current_session = 1
 let g:tslime_always_current_window = 1
 
 " vim-rspec mappings
-map <Leader>r :call RunCurrentSpecFile()<CR>
-map <Leader>s :call RunNearestSpec()<CR>
-map <Leader>l :call RunLastSpec()<CR>
-map <Leader>a :call RunAllSpecs()<CR>
+nmap <silent> <leader>s :TestNearest<CR>
+nmap <silent> <leader>r :TestFile<CR>
+nmap <silent> <leader>a :TestSuite<CR>
+nmap <silent> <leader>l :TestLast<CR>
+nmap <silent> <leader>g :TestVisit<CR>
+let test#strategy = "neoterm"
 
 autocmd filetype python set expandtab
 
@@ -407,7 +490,7 @@ set scrolloff=5
 """
 set background=dark
 try
-  colorscheme solarized
+  colorscheme NeoSolarized
 catch
   colorscheme desert
 endtry
@@ -432,6 +515,7 @@ nmap <leader>h :bprevious<CR>
 
 " Close the current buffer and move to the previous one
 " This replicates the idea of closing a tab
+" FIXME: not good for modified buffers
 nmap <leader>bq :bp <BAR> bd #<CR>
 nmap <leader>bQ :bp <BAR> bd! #<CR>
 
@@ -452,8 +536,28 @@ highlight ColorColumn ctermbg=magenta
 call matchadd('ColorColumn', '\%81v', 100)
 
 nmap <leader>t :TagbarToggle<CR>
-nmap <leader>n :NERDTreeTabsToggle<CR>
+nmap <leader>n :NERDTreeToggle<CR>
 
+" Make Y yank everything from the cursor to the end of the line. This makes Y
+" act more like C or D because by default, Y yanks the current line (i.e. the
+" same as yy).
+noremap Y y$
+
+" In command mode (i.e. after pressing ':'), expand %% to the path of the current
+" buffer. This allows you to easily open files from the same directory as the
+" currently opened file.
+cnoremap <expr> %% getcmdtype() == ':' ? expand('%:h').'/' : '%%'
+
+" Stay in visual mode when indenting. You will never have to run gv after
+" performing an indentation.
+vnoremap < <gv
+vnoremap > >gv
+
+" Better motions with wrapped lines
+noremap <silent> <expr> j (v:count == 0 ? 'gj' : 'j')
+noremap <silent> <expr> k (v:count == 0 ? 'gk' : 'k')
+
+nmap <leader>x :TComment<CR>
 
 set shiftwidth=2
 set softtabstop=2
@@ -489,6 +593,10 @@ if has('nvim')
   set ttimeoutlen=0
 
   tnoremap <Esc> <C-\><C-n>
+endif
+
+if has('gui')
+  Guifont DejaVu Sans Mono:h13
 endif
 
 if filereadable(expand("~/.vimrc.local"))
