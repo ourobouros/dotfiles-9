@@ -272,6 +272,55 @@ let g:tagbar_type_markdown = {
         \ 's' : 'section',
     \ },
     \ 'sort': 0,
+    \ }
+
+"let g:easytags_languages = {
+"            \   'javascript': {
+"            \       'cmd': 'ctags',
+"            \       'args': [],
+"            \       'fileoutput_opt': '-f',
+"            \       'stdout_opt': '-f-',
+"            \       'recurse_flag': '-R'
+"            \   }
+"            \}
+
+let g:tagbar_type_javascript = {
+    \ 'ctagstype' : 'javascript',
+    \ 'ctagsbin'  : 'ctags',
+    \ 'kinds'     : [
+        \ 'c:constants',
+        \ 'f:functions',
+        \ 'o:objects',
+        \ 'r:rapapapom',
+    \ ],
+\ }
+
+let g:tagbar_type_go = {
+    \ 'ctagstype' : 'go',
+    \ 'kinds'     : [
+        \ 'p:package',
+        \ 'i:imports:1',
+        \ 'c:constants',
+        \ 'v:variables',
+        \ 't:types',
+        \ 'n:interfaces',
+        \ 'w:fields',
+        \ 'e:embedded',
+        \ 'm:methods',
+        \ 'r:constructor',
+        \ 'f:functions'
+    \ ],
+    \ 'sro' : '.',
+    \ 'kind2scope' : {
+        \ 't' : 'ctype',
+        \ 'n' : 'ntype'
+    \ },
+    \ 'scope2kind' : {
+        \ 'ctype' : 't',
+        \ 'ntype' : 'n'
+    \ },
+    \ 'ctagsbin'  : 'gotags',
+    \ 'ctagsargs' : '-sort -silent'
 \ }
 
 " Default fzf layout
