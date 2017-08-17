@@ -86,9 +86,6 @@ call plug#begin(vimplugdir)
 if !has('nvim')
   Plug 'tpope/vim-sensible'
 endif
-if has('python')
-  Plug 'neilagabriel/vim-geeknote'
-endif
 
 " Make sure you use single quotes
 Plug 'junegunn/vim-easy-align'
@@ -103,11 +100,12 @@ Plug 'junegunn/fzf.vim'
 " Git goodies
 Plug 'tpope/vim-fugitive'
 " The NerdTree
-Plug 'scrooloose/nerdtree' | Plug 'jistr/vim-nerdtree-tabs'
+Plug 'scrooloose/nerdtree'
 " Nice colours for our Vim
 Plug 'altercation/vim-colors-solarized'
-" Ag, the SilverSearcher through his friend Ack
-Plug 'mileszs/ack.vim'
+Plug 'iCyMind/NeoSolarized'
+" Grepper to... grep code asynchronously
+Plug 'mhinz/vim-grepper', { 'on': ['Grepper', '<plug>(GrepperOperator)'] }
 " Man browser for Vim
 Plug 'bruno-/vim-man'
 " Without you, I'm nothing
@@ -120,10 +118,6 @@ endif
 Plug 'embear/vim-localvimrc'
 " Dockerfile support
 Plug 'ekalinin/Dockerfile.vim'
-" Automatic generation of CTags
-Plug 'vim-scripts/vim-misc' | Plug 'xolox/vim-easytags'
-" Automatic update of CTags
-Plug 'craigemery/vim-autotag'
 " Nice browser for CTags
 Plug 'majutsushi/tagbar'
 " Tmux .conf
@@ -143,8 +137,6 @@ Plug 'gregsexton/Atom'
 Plug 'gregsexton/gitv'
 " Ability to :SudoWrite? Priceless!
 Plug 'tpope/vim-eunuch'
-" Some syntax checking maybe?
-Plug 'vim-syntastic/syntastic'
 " Close all buffers but current
 Plug 'muziqiushan/bufonly'
 " Enhanced Commentify
@@ -180,27 +172,14 @@ Plug 'jelera/vim-javascript-syntax'
 Plug 'pangloss/vim-javascript'
 Plug 'nathanaelkane/vim-indent-guides'
 Plug 'marijnh/tern_for_vim', {'do': function('InstallTern')}
-
-" " CoffeeScript support in Vim
-" Bundle 'kchmck/vim-coffee-script'
-" " EasyMotion
-" Bundle 'Lokaltog/vim-easymotion'
-" " Vim Outliner
-" Bundle 'vimoutliner/vimoutliner'
-" " Python mode
-" Bundle 'klen/python-mode'
-" " What's a snake without Jedi powers?
-" Bundle 'DoomHammer/jedi-vim'
-" " Jade support
-" Bundle 'jade.vim'
-" " VCS
-" Bundle 'vcscommand.vim'
-" " C# Compiler support
-" Bundle 'gmcs.vim'
-" " Compilation of lonely files
-" Bundle 'SingleCompile'
-" " EditorConfig
-" Bundle 'editorconfig/editorconfig-vim'
+" IDE-like handling of buffers
+Plug 'bagrat/vim-workspace'
+" EditorConfig
+Plug 'editorconfig/editorconfig-vim'
+" EasyMotion
+Plug 'Lokaltog/vim-easymotion'
+" What's a snake without Jedi powers?
+Plug 'davidhalter/jedi-vim'
 
 if has('nvim')
   " Great lldb interface for neovim
@@ -211,6 +190,7 @@ if has('nvim')
   Plug 'kassio/neoterm'
   " Use Neovim Terminal with Dispatch
   Plug 'radenling/vim-dispatch-neovim'
+  Plug 'fntlnz/atags.vim'
 endif
 
 call plug#end()
@@ -223,23 +203,20 @@ endtry
 """ Now configure those plugins
 """
 
+autocmd BufReadPost * call atags#setup()
+autocmd BufWritePost,BufReadPost * call atags#generate()
+
 if executable('ag')
   let g:ackprg = 'ag --vimgrep --smart-case'
 endif
 nnoremap <Leader>a :Ack!<Space>
 
-"map <Leader>n <plug>NERDTreeTabsToggle<CR>
 map <Leader>n <plug>NERDTreeToggle<CR>
 
 set tags=./tags,.vimtags,~/.vim/tags;
 set conceallevel=1
 set foldmethod=syntax
 set pastetoggle=<F2>
-
-let g:easytags_async=1
-let g:easytags_file="~/.vim/tags"
-let g:easytags_dynamic_files=2
-let g:easytags_suppress_ctags_warning=1
 
 " Tagbar definitions
 let g:tagbar_type_ansible = {
@@ -278,11 +255,6 @@ let g:prosession_on_startup = 1
 let g:prosession_tmux_title = 1
 
 
-let g:syntastic_always_populate_loc_list = 1
-let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
-let g:syntastic_check_on_wq = 0
-let g:syntastic_mode_map = { 'passive_filetypes': ['python'] }
 
 " Show docs
 let g:javascript_plugin_jsdoc = 1
@@ -343,8 +315,8 @@ autocmd! User GoyoEnter nested call <SID>goyo_enter()
 autocmd! User GoyoLeave nested call <SID>goyo_leave()
 
 if has('nvim')
-  autocmd! BufReadPost,BufWritePost * Neomake
-  autocmd! VimLeave * let g:neomake_verbose = 0
+  autocmd BufReadPost,BufWritePost * Neomake
+  autocmd VimLeave * let g:neomake_verbose = 0
 endif
 
 autocmd BufRead,BufNewFile *.{markdown,md,mkd} call SetMarkdownOptions()
@@ -387,6 +359,10 @@ map <Leader>a :call RunAllSpecs()<CR>
 
 autocmd filetype python set expandtab
 
+nmap gs  <plug>(GrepperOperator)
+xmap gs  <plug>(GrepperOperator)
+nnoremap <leader>* :Grepper -tool ag -cword -noprompt<cr>
+
 """
 """ Misc definitions
 """
@@ -397,11 +373,15 @@ set scrolloff=5
 """ Colorscheme
 """
 set background=dark
-try
-  colorscheme solarized
-catch
-  colorscheme desert
-endtry
+if has('nvim')
+  colorscheme NeoSolarized
+else
+  try
+    colorscheme solarized
+  catch
+    colorscheme desert
+  endtry
+endif
 let g:airline_theme='solarized'
 let g:limelight_conceal_ctermfg = 245 " Solarized Base1
 let g:limelight_conceal_guifg = '#8a8a8a' " Solarized Base1
@@ -435,6 +415,15 @@ map <leader>gu <Plug>GitGutterUndoHunk
 
 nmap <leader>] :Goyo<CR>
 
+" Vim Workspace config
+noremap <Tab> :WSNext<CR>
+noremap <S-Tab> :WSPrev<CR>
+noremap <Leader><Tab> :WSClose<CR>
+noremap <Leader><S-Tab> :WSClose!<CR>
+noremap <C-t> :WSTabNew<CR>
+
+cabbrev bonly WSBufOnly
+
 """
 """ Visually indicate long columns
 """ Taken from https://www.youtube.com/watch?v=aHm36-na4-4
@@ -443,7 +432,6 @@ highlight ColorColumn ctermbg=magenta
 call matchadd('ColorColumn', '\%81v', 100)
 
 nmap <leader>t :TagbarToggle<CR>
-nmap <leader>n :NERDTreeTabsToggle<CR>
 
 
 set shiftwidth=2
@@ -480,6 +468,11 @@ if has('nvim')
   set ttimeoutlen=0
 
   tnoremap <Esc> <C-\><C-n>
+endif
+
+if has('nvim')
+  " TODO: pip3 install neovim-remote
+  let $VISUAL = 'nvr -cc split --remote-wait'
 endif
 
 if filereadable(expand("~/.vimrc.local"))
